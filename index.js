@@ -99,6 +99,7 @@ function processFile(fileContent, fileName) {
   }
   const foundPath = findPath(parsedJSON);
   if (foundPath) {
+    foundPath.fill = 'none';
     resultJSON.svg.path.push(foundPath);
     const newXML = convert.json2xml(resultJSON, {compact: true, ignoreComment: true, spaces: 4});
     const buffer = new Buffer(newXML);
