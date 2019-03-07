@@ -99,7 +99,9 @@ function processFile(fileContent, fileName) {
   }
   const foundPath = findPath(parsedJSON);
   if (foundPath) {
-    foundPath.fill = 'none';
+    if (foundPath._attributes.fill) {
+      delete foundPath._attributes.fill;
+    };
     resultJSON.svg.path.push(foundPath);
     const newXML = convert.json2xml(resultJSON, {compact: true, ignoreComment: true, spaces: 4});
     const buffer = new Buffer(newXML);
@@ -118,6 +120,20 @@ function processFile(fileContent, fileName) {
       });
     });
   }
+}
+
+function findPathInsideGTags(data) {
+  let gTag = data.svg.g;
+  while (gTag.g) {
+    gTag = gTag.g;
+    if (gTag.path) {
+      break;
+    }
+  }
+  if (gTag.path) {
+    return gTag.path;
+  } 
+  return null;
 }
 
 function findPath(data) {
@@ -150,7 +166,7 @@ function findPath(data) {
   *   ...
   * </svg>
   * 
-  * Else if defs doesn't exist. Example:
+  * Else if defs doesn't exist (or it doesn't have a path inside it). Example:
   * 
   * <svg>
   *   <g>
@@ -164,20 +180,17 @@ function findPath(data) {
   * 
   */
   if (data.svg.defs) { 
-    if (data.svg.defs.path && data.svg.defs.path instanceof Array) {
-      return data.svg.defs.path.find(el => el._attributes.d !== "M0 0h24v24H0z") || null;
+    if (data.svg.defs.path) {
+      if(data.svg.defs.path instanceof Array) {
+        return data.svg.defs.path.find(el => el._attributes.d !== "M0 0h24v24H0z") || null;
+      } else {
+        return data.svg.defs.path;
+      }
     } else {
-      return data.svg.defs.path;
+      return findPathInsideGTags(data);
     }
   } else {
-    let gTag = data.svg.g;
-    while (gTag.g) {
-      gTag = gTag.g;
-    }
-    if (gTag.path) {
-      return gTag.path;
-    } 
-    return null;
+    return findPathInsideGTags(data);
   }
 }
 
